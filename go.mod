@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/lxc/lxd v0.0.0-20230203092445-70b38dec97c2
-	gopkg.in/yaml.v3 v3.0.1
+	gopkg.in/yaml.v2 v2.4.0
 )
 
 require (
@@ -37,5 +37,4 @@ require (
 	gopkg.in/juju/environschema.v1 v1.0.1 // indirect
 	gopkg.in/macaroon.v2 v2.1.0 // indirect
 	gopkg.in/retry.v1 v1.0.3 // indirect
-	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
