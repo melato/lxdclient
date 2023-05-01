@@ -1,0 +1,5 @@
+short: Example usage of lxdclient
+commands:
+  list:
+    short: list containers
+
