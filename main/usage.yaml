@@ -1,5 +1,9 @@
 short: Example usage of lxdclient
 commands:
-  list:
+  containers:
     short: list containers
+  profiles:
+    short: list profiles
+  conf:
+    short: print the lxc config used
 

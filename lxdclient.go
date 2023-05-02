@@ -1,133 +1,105 @@
 package lxdclient
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 
 	lxd "github.com/lxc/lxd/client"
 	"github.com/lxc/lxd/lxc/config"
+	"github.com/lxc/lxd/shared"
 )
 
+/*
+LxdClient provides an lxd.InstanceServer
+Use it by calling these methods, in order:
+Init(), Configured(), CurrentServer().
+*/
 type LxdClient struct {
-	Socket string
-	Http   bool `usage:"connect to LXD using http"`
-	Unix   bool `usage:"connect to LXD using unix socket"`
-	//Project        string `name:"project" usage:"the LXD project to use.  Overrides Config.Project"`
-	rootServer    lxd.InstanceServer
-	projectServer lxd.InstanceServer
-	LxcConfig
+	ForceLocal bool   `name:"force-local" usage:"Force using the local unix socket"`
+	Project    string `name:"project" usage:"Override the default project"`
+	ConfigDir  string `name:"config-dir" usage:"lxc config dir"`
+	UnixSocket string `name:"unix-socket" usage:"The path of the UNIX socket."`
+
+	confPath   string
+	conf       *config.Config
+	rootServer lxd.InstanceServer
 }
 
-func (t *LxdClient) Init() error {
-	t.Socket = "/var/snap/lxd/common/lxd/unix.socket"
+// Init - Sets default values for the public fields.
+func (c *LxdClient) Init() error {
+	var err error
+	c.UnixSocket, err = UnixSocket()
+	if err != nil {
+		return err
+	}
+	c.ConfigDir, err = ConfigDir()
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
-// connectUnix - Connect to LXD over the Unix socket
-func (t *LxdClient) connectUnix() (lxd.InstanceServer, error) {
-	server, err := lxd.ConnectLXDUnix(t.Socket, nil)
-	if err != nil {
-		return nil, errors.New(fmt.Sprintf("%s: %s", t.Socket, err.Error()))
+func (c *LxdClient) Configured() error {
+	var err error
+	if c.ForceLocal {
+		if c.UnixSocket == "" || !shared.PathExists(c.UnixSocket) {
+			return fmt.Errorf("no such unix socket: %s", c.UnixSocket)
+		}
+		c.conf = config.NewConfig(c.UnixSocket, true)
+	} else if shared.PathExists(c.ConfigDir) {
+		c.confPath = os.ExpandEnv(filepath.Join(c.ConfigDir, "config.yml"))
+		c.conf, err = config.LoadConfig(c.confPath)
+		if err != nil {
+			return err
+		}
+	} else {
+		return fmt.Errorf("config dir not found: %s", c.ConfigDir)
 	}
-	return server, nil
+	return nil
 }
 
-func (t *LxdClient) configFile(name string) (string, error) {
-	dir, err := ConfigDir()
-	if err != nil {
-		return "", err
-	}
-	return filepath.Join(dir, name), nil
-}
-
-func (t *LxdClient) readConfigFile(name string) ([]byte, error) {
-	file, err := t.configFile(name)
-	if err != nil {
-		return nil, err
-	}
-	return os.ReadFile(file)
-}
-
-func (t *LxdClient) connectHttp() (lxd.InstanceServer, error) {
-	var cfg config.Config
-	cfgPath, err := t.configFile("config.yml")
-	if err != nil {
-		return nil, err
-	}
-	err = ReadYaml(cfgPath, &cfg)
-	if err != nil {
-		return nil, err
-	}
-	if cfg.DefaultRemote == "" {
-		return nil, fmt.Errorf("missing default remote")
-	}
-	remote, found := cfg.Remotes[cfg.DefaultRemote]
-	if !found {
-		return nil, fmt.Errorf("missing remote: %s", cfg.DefaultRemote)
-	}
-	serverCrt, err := t.readConfigFile(fmt.Sprintf("servercerts/%s.crt", cfg.DefaultRemote))
-	if err != nil {
-		return nil, err
-	}
-	crt, err := t.readConfigFile("client.crt")
-	if err != nil {
-		return nil, err
-	}
-	key, err := t.readConfigFile("client.key")
-	if err != nil {
-		return nil, err
-	}
-	args := &lxd.ConnectionArgs{
-		AuthType:      remote.AuthType,
-		TLSServerCert: string(serverCrt),
-		TLSClientCert: string(crt),
-		TLSClientKey:  string(key)}
-	server, err := lxd.ConnectLXD(remote.Addr, args)
-	if err != nil {
-		return nil, errors.New(fmt.Sprintf("%s: %s", remote.Addr, err.Error()))
-	}
-	return server, nil
-}
-
+// RootServer - return the unqualified (no project) LXD instance server
 func (t *LxdClient) RootServer() (lxd.InstanceServer, error) {
 	if t.rootServer == nil {
-		var server lxd.InstanceServer
-		var err error
-		if t.Http {
-			server, err = t.connectHttp()
-		} else if t.Unix {
-			server, err = t.connectUnix()
-		} else {
-			server, err = t.connectHttp()
-			if err != nil {
-				server, err = t.connectUnix()
-			}
-		}
+		d, err := t.conf.GetInstanceServer(t.conf.DefaultRemote)
 		if err != nil {
 			return nil, err
 		}
-		t.rootServer = server
+		t.rootServer = d
 	}
 	return t.rootServer, nil
 }
 
+// RootServer - return the LXD instance server for the specified project
+// If project is empty, use the default project
 func (t *LxdClient) ProjectServer(project string) (lxd.InstanceServer, error) {
 	var err error
 	if project == "" {
-		project = t.CurrentProject()
+		project = t.Project
+	}
+	if project == "" {
+		remote, ok := t.conf.Remotes[t.conf.DefaultRemote]
+		if ok {
+			project = remote.Project
+		}
+	}
+	if project == "" {
+		project = "default"
 	}
 	server, err := t.RootServer()
 	if err != nil {
 		return nil, err
 	}
-	if project == "default" {
-		return server, nil
-	}
 	return server.UseProject(project), nil
 }
 
+// RootServer - return the LXD instance server for the current project
 func (t *LxdClient) CurrentServer() (lxd.InstanceServer, error) {
 	return t.ProjectServer("")
+}
+
+// Config - return the LXD *Config
+func (c *LxdClient) Config() *config.Config {
+	return c.conf
 }
