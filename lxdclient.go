@@ -10,51 +10,53 @@ import (
 	"github.com/lxc/lxd/shared"
 )
 
+var Trace bool
+
 /*
 LxdClient provides an lxd.InstanceServer
 Use it by calling these methods, in order:
-Init(), Configured(), CurrentServer().
+Configured(), CurrentServer().
 */
 type LxdClient struct {
 	ForceLocal bool   `name:"force-local" usage:"Force using the local unix socket"`
 	Project    string `name:"project" usage:"Override the default project"`
-	ConfigDir  string `name:"config-dir" usage:"lxc config dir"`
-	UnixSocket string `name:"unix-socket" usage:"The path of the UNIX socket."`
 
 	confPath   string
 	conf       *config.Config
 	rootServer lxd.InstanceServer
 }
 
-// Init - Sets default values for the public fields.
-func (c *LxdClient) Init() error {
-	var err error
-	c.UnixSocket, err = UnixSocket()
-	if err != nil {
-		return err
-	}
-	c.ConfigDir, err = ConfigDir()
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 func (c *LxdClient) Configured() error {
-	var err error
 	if c.ForceLocal {
-		if c.UnixSocket == "" || !shared.PathExists(c.UnixSocket) {
-			return fmt.Errorf("no such unix socket: %s", c.UnixSocket)
+		unixSocket, err := UnixSocket()
+		if err != nil {
+			return err
 		}
-		c.conf = config.NewConfig(c.UnixSocket, true)
-	} else if shared.PathExists(c.ConfigDir) {
-		c.confPath = os.ExpandEnv(filepath.Join(c.ConfigDir, "config.yml"))
+		if unixSocket == "" || !shared.PathExists(unixSocket) {
+			return fmt.Errorf("no such unix socket: %s", unixSocket)
+		}
+		if Trace {
+			fmt.Printf("using unix socket: %s\n", unixSocket)
+		}
+		server, err := lxd.ConnectLXDUnix(unixSocket, nil)
+		if err != nil {
+			return fmt.Errorf("%s: %w", unixSocket, err)
+		}
+		c.rootServer = server
+		c.conf = config.NewConfig("", true)
+	} else {
+		configDir, err := ConfigDir()
+		if err != nil {
+			return err
+		}
+		if configDir == "" || !shared.PathExists(configDir) {
+			return fmt.Errorf("config dir not found: %s", configDir)
+		}
+		c.confPath = os.ExpandEnv(filepath.Join(configDir, "config.yml"))
 		c.conf, err = config.LoadConfig(c.confPath)
 		if err != nil {
 			return err
 		}
-	} else {
-		return fmt.Errorf("config dir not found: %s", c.ConfigDir)
 	}
 	return nil
 }

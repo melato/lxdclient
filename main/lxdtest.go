@@ -16,6 +16,7 @@ var usageData []byte
 
 type App struct {
 	lxdclient.LxdClient
+	Trace bool `name:"trace" usage:"print informational statements"`
 }
 
 func (t *App) ListContainers() error {
@@ -57,6 +58,13 @@ func (t *App) PrintConfig() error {
 	os.Stdout.Write(data)
 	fmt.Println()
 	return nil
+}
+
+func (t *App) Configured() error {
+	if t.Trace {
+		lxdclient.Trace = true
+	}
+	return t.LxdClient.Configured()
 }
 
 func main() {
