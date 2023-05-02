@@ -18,6 +18,11 @@ $LXD_CONF, if defined
 Otherwise, the first of these that exists:
   - os.UserConfigDir()/lxc
   - $os.UserHomeDir()/snap/lxd/common/config
+  - the path returned by github.com/lxc/lxd lxc/config.Config.GlobalConfigPath():
+
+GlobalConfigPath
+  - $LXD_GLOBAL_CONF
+  - /etc/lxd
 
 Where $var is the var environment variable.
 */

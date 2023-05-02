@@ -1,5 +1,5 @@
 This is a small Go library that connects to an LXD server,
-using the same configuration used by the "lxc" command.
+with the goal of using the same configuration used by the "lxc" command.
 
 It Uses code from https://github.com/lxc/lxd
 
@@ -14,4 +14,5 @@ But when LXD is installed as a snap, "lxc" seems to use the following:
 
 
 lxdclient uses all of the above, whichever it finds first.
+
 See go doc for the full list.

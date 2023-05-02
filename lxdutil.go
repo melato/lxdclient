@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/lxc/lxd/lxc/config"
 	"github.com/lxc/lxd/shared"
 )
 
@@ -58,6 +59,11 @@ func ConfigDir() (string, error) {
 		}
 	}
 	configDir = filepath.Join(home, "snap", "lxd", "common", "config")
+	if shared.PathExists(configDir) {
+		return configDir, nil
+	}
+	var c config.Config
+	configDir = c.GlobalConfigPath()
 	if shared.PathExists(configDir) {
 		return configDir, nil
 	}
