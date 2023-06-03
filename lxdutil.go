@@ -1,6 +1,7 @@
 package lxdclient
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -74,6 +75,9 @@ func LoadConfig() (*config.Config, error) {
 	configDir, err := ConfigDir()
 	if err != nil {
 		return nil, err
+	}
+	if Trace {
+		fmt.Printf("using %s\n", configDir)
 	}
 	confPath := os.ExpandEnv(filepath.Join(configDir, "config.yml"))
 	return config.LoadConfig(confPath)
