@@ -69,3 +69,12 @@ func ConfigDir() (string, error) {
 	}
 	return "", nil
 }
+
+func LoadConfig() (*config.Config, error) {
+	configDir, err := ConfigDir()
+	if err != nil {
+		return nil, err
+	}
+	confPath := os.ExpandEnv(filepath.Join(configDir, "config.yml"))
+	return config.LoadConfig(confPath)
+}
