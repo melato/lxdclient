@@ -27,21 +27,29 @@ func (t *LxdClient) Init() error {
 	return nil
 }
 
+func connectUnix() (lxd.InstanceServer, error) {
+	unixSocket, err := UnixSocket()
+	if err != nil {
+		return nil, err
+	}
+	if unixSocket == "" || !shared.PathExists(unixSocket) {
+		return nil, fmt.Errorf("no such unix socket: %s", unixSocket)
+	}
+	if Trace {
+		fmt.Printf("using unix socket: %s\n", unixSocket)
+	}
+	server, err := lxd.ConnectLXDUnix(unixSocket, nil)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", unixSocket, err)
+	}
+	return server, nil
+}
+
 func (t *LxdClient) Configured() error {
 	if t.ForceLocal {
-		unixSocket, err := UnixSocket()
+		server, err := connectUnix()
 		if err != nil {
 			return err
-		}
-		if unixSocket == "" || !shared.PathExists(unixSocket) {
-			return fmt.Errorf("no such unix socket: %s", unixSocket)
-		}
-		if Trace {
-			fmt.Printf("using unix socket: %s\n", unixSocket)
-		}
-		server, err := lxd.ConnectLXDUnix(unixSocket, nil)
-		if err != nil {
-			return fmt.Errorf("%s: %w", unixSocket, err)
 		}
 		t.rootServer = server
 		t.conf = config.NewConfig("", true)
@@ -58,11 +66,20 @@ func (t *LxdClient) Configured() error {
 // RootServer - return the unqualified (no project) LXD instance server
 func (t *LxdClient) RootServer() (lxd.InstanceServer, error) {
 	if t.rootServer == nil {
-		d, err := t.conf.GetInstanceServer(t.conf.DefaultRemote)
-		if err != nil {
-			return nil, err
+		remote, ok := t.conf.Remotes[t.conf.DefaultRemote]
+		if ok && remote.Addr == "unix://" {
+			server, err := connectUnix()
+			if err != nil {
+				return nil, err
+			}
+			t.rootServer = server
+		} else {
+			d, err := t.conf.GetInstanceServer(t.conf.DefaultRemote)
+			if err != nil {
+				return nil, err
+			}
+			t.rootServer = d
 		}
-		t.rootServer = d
 	}
 	return t.rootServer, nil
 }
