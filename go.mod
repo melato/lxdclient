@@ -2,10 +2,7 @@ module melato.org/lxdclient
 
 go 1.19
 
-require (
-	github.com/lxc/lxd v0.0.0-20230415023757-36cc5751ea49
-	gopkg.in/yaml.v2 v2.4.0
-)
+require github.com/lxc/lxd v0.0.0-20230526000706-c0b7d6b0c8cc
 
 require (
 	github.com/flosch/pongo2 v0.0.0-20200913210552-0d938eb266f3 // indirect
@@ -29,13 +26,13 @@ require (
 	github.com/pkg/xattr v0.4.9 // indirect
 	github.com/robfig/cron/v3 v3.0.1 // indirect
 	github.com/rogpeppe/fastuuid v1.2.0 // indirect
-	github.com/sirupsen/logrus v1.9.0 // indirect
-	github.com/zitadel/oidc/v2 v2.5.0 // indirect
-	golang.org/x/crypto v0.8.0 // indirect
-	golang.org/x/net v0.9.0 // indirect
-	golang.org/x/oauth2 v0.7.0 // indirect
-	golang.org/x/sys v0.7.0 // indirect
-	golang.org/x/term v0.7.0 // indirect
+	github.com/sirupsen/logrus v1.9.2 // indirect
+	github.com/zitadel/oidc/v2 v2.6.1 // indirect
+	golang.org/x/crypto v0.9.0 // indirect
+	golang.org/x/net v0.10.0 // indirect
+	golang.org/x/oauth2 v0.8.0 // indirect
+	golang.org/x/sys v0.8.0 // indirect
+	golang.org/x/term v0.8.0 // indirect
 	golang.org/x/text v0.9.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/protobuf v1.30.0 // indirect
@@ -45,4 +42,5 @@ require (
 	gopkg.in/macaroon.v2 v2.1.0 // indirect
 	gopkg.in/retry.v1 v1.0.3 // indirect
 	gopkg.in/square/go-jose.v2 v2.6.0 // indirect
+	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
