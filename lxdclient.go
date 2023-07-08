@@ -3,9 +3,9 @@ package lxdclient
 import (
 	"fmt"
 
-	lxd "github.com/lxc/lxd/client"
-	"github.com/lxc/lxd/lxc/config"
-	"github.com/lxc/lxd/shared"
+	lxd "github.com/canonical/lxd/client"
+	"github.com/canonical/lxd/lxc/config"
+	"github.com/canonical/lxd/shared"
 )
 
 var Trace bool

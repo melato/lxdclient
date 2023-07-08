@@ -5,13 +5,13 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/lxc/lxd/lxc/config"
-	"github.com/lxc/lxd/shared"
+	"github.com/canonical/lxd/lxc/config"
+	"github.com/canonical/lxd/shared"
 )
 
 /*
 UnixSocket returns the default LXD Unix Socket
-See https://github.com/lxc/lxd/blob/master/client/connection.go
+See https://github.com/canonical/lxd/blob/master/client/connection.go
 We use a similar strategy as connection.go ConnectLXDUnixWithContext(),
 except that we add /var/snap/lxd/common/lxd/ to the LXD directories searched.
 If no LXD directory is found, return "", nil.
@@ -38,7 +38,7 @@ func UnixSocket() (string, error) {
 
 /*
 ConfigDir returns the default LXD client configuration directory.
-See https://github.com/lxc/lxd/blob/master/client/main.go
+See https://github.com/canonical/lxd/blob/master/client/main.go
 We use a similar strategy as main.go func (c *cmdGlobal) PreRun,
 except that we add $HOME/snap/lxd/common/config/ to the LXD config directories searched.
 If no LXD CONF directory is found, return "", nil.
